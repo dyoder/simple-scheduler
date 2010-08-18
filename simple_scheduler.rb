@@ -16,10 +16,11 @@ module SimpleScheduler
 		end
 		
 		def start
+			logger.info("Scheduler") { "Starting up scheduling thread" }
 			restore
 			@thread = Thread.new do
 				loop do
-					now = DateTime.now
+					now = Time.now
 					runnable, @queue = @queue.partition {|job| job.when<=now}
 					runnable.each {|job| job.run(logger)}
 					save
@@ -30,6 +31,7 @@ module SimpleScheduler
 		
 		def stop
 			return unless @thread
+			logger.info("Scheduler") { "Stopping scheduling thread" }
 			sleep 1 until @thread.status == "sleep"
 			@thread.kill
 		end
@@ -37,7 +39,7 @@ module SimpleScheduler
 		def <<(job)
 			# if the job is unscheduled or in the past
 			# just go ahead and run it now
-			if job.when.nil? or job.when < DateTime.now
+			if job.when.nil? or job.when < Time.now
 				job.run(logger)
 			else
 				# otherwise add it to the queue and save
