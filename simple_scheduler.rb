@@ -20,6 +20,7 @@ module SimpleScheduler
 			restore
 			@thread = Thread.new do
 				loop do
+					break if @stop
 					now = Time.now
 					runnable, @queue = @queue.partition {|job| job.when<=now}
 					runnable.each {|job| job.run(logger)}
@@ -32,8 +33,9 @@ module SimpleScheduler
 		def stop
 			return unless @thread
 			logger.info("Scheduler") { "Stopping scheduling thread" }
-			sleep 1 until @thread.status == "sleep"
-			@thread.kill
+			@stop = true
+			sleep 1 while @thread.alive?
+			@stop = false
 		end
 		
 		def <<(job)
